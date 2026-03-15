@@ -1,16 +1,18 @@
 import User from "../models/User.js";
-
+import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 
-const register = async (req, res) => {
+export const register = async (req, res) => {
   try {
     const { name, email, password, role, phoneNumber, address } = req.body;
 
-    if (!name || !email || !password || !phoneNumber) {
+    if (!name || !email || !password || !phoneNumber || !address) {
       return res
         .status(400)
         .json({ message: "Please provide all required fields" });
     }
+
+    console.log("resister",email,password,role);
 
     const existingUser = await User.findOne({ email });
 
@@ -31,8 +33,8 @@ const register = async (req, res) => {
       address,
     });
 
-    const token = jwt.sign({ id: user._id }, process.env.jWT_SECRET, {
-      expireIn: "7d",
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
     });
 
     res.status(201).json({
@@ -50,15 +52,17 @@ const register = async (req, res) => {
 };
 
 
-const login = async (req,res)=>{
+export const login = async (req,res)=>{
     try{
         const {email,password}=req.body;
+
+        //console.log("login", email,password)
 
         if(!email || !password){
             return res.status(400).json({message:"Please provide email and password"});
         }
 
-        const user= await User.find({email});
+        const user= await User.findOne({email});
 
         if(!user){
             return res.status(400).json({message:"Invalid email or password"});
@@ -71,7 +75,7 @@ const login = async (req,res)=>{
         }
 
         const token= jwt.sign({id:user._id},process.env.jWT_SECRET,{
-            expireIn:"7d"
+            expiresIn:"7d"
         })
 
         res.json({
@@ -88,4 +92,3 @@ const login = async (req,res)=>{
 }
 
 
-module.exports={register,login}
