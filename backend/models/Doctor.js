@@ -27,28 +27,32 @@ const doctorSchema = new mongoose.Schema({
     required: true
   },
   profileImage: {
-    type: String,
-    required: true
+    url: String,
+    public_id: String
   },
   qualifications: [{
     degree: String,
     institution: String,
     year: Number
   }],
-  availableSlots: [{
-    day: {
-      type: String,
-      enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+   availableSlots: [
+    {
+      date: {
+        type: Date,
+        required: true,
+      },
+      slots: [
+        {
+          startTime: { type: String, required: true },
+          endTime: { type: String, required: true },
+          isBooked: {
+            type: Boolean,
+            default: false,
+          },
+        },
+      ],
     },
-    slots: [{
-      startTime: String,
-      endTime: String,
-      isBooked: {
-        type: Boolean,
-        default: false
-      }
-    }]
-  }],
+  ],
   isApproved: {
     type: Boolean,
     default: false
@@ -69,4 +73,8 @@ const doctorSchema = new mongoose.Schema({
   }
 });
 
-module.exports = mongoose.model('Doctor', doctorSchema);
+
+export default  mongoose.model('Doctor', doctorSchema);
+
+
+// module.exports = mongoose.model('Doctor', doctorSchema);

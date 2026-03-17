@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
+import User from "../models/User.js";
 
-const protect = async (req, res, next) => {
+export const protect = async (req, res, next) => {
   let token;
 
   if (
@@ -10,12 +11,14 @@ const protect = async (req, res, next) => {
     try {
       token = req.headers.authorization.split(" ")[1];
 
-      console.log(token);
+      // console.log(token);
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log("decoded",decoded);
+      // console.log("decoded",decoded);
       
       req.user = await User.findById(decoded.id).select("-password");
+
+      console.log(req.user)
 
       next();
 
@@ -31,7 +34,7 @@ const protect = async (req, res, next) => {
 };
 
 
-const authorize = (...roles) => {
+export const authorize = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({ 
@@ -43,6 +46,4 @@ const authorize = (...roles) => {
 };
 
 
-module.exports={protect,authorize}
 
-// added 

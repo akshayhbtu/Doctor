@@ -194,14 +194,13 @@ export const updateDoctorProfile = async (req, res) => {
       qualifications,
     } = req.body;
 
-    // ✅ Update fields (only if provided)
     if (specialization) doctor.specialization = specialization;
     if (experience) doctor.experience = experience;
     if (hospital) doctor.hospital = hospital;
     if (consultationFee) doctor.consultationFee = consultationFee;
     if (location) doctor.location = location;
 
-    // ✅ Safe JSON parse
+    
     if (qualifications) {
       try {
         doctor.qualifications = JSON.parse(qualifications);
@@ -210,30 +209,28 @@ export const updateDoctorProfile = async (req, res) => {
       }
     }
 
-    // 🔥 Handle Image Update
+    //  Handle Image Update
     if (req.file) {
-      // ✅ Delete old image from Cloudinary
+      //  Delete old image from Cloudinary
       if (doctor.profileImage?.public_id) {
         await deleteFromCloudinary(doctor.profileImage.public_id);
       }
 
-      // ✅ Upload new image
       const result = await uploadToCloudinary(req.file.path);
 
-      // ✅ Save new image
       doctor.profileImage = {
         url: result.url,
         public_id: result.public_id,
       };
 
-      // ✅ Delete local file
+      //  Delete local file
       if (fs.existsSync(req.file.path)) {
         fs.unlinkSync(req.file.path);
       }
     }
 
     await doctor.save();
-    
+
 
     res.status(200).json({
       success: true,

@@ -1,0 +1,141 @@
+
+
+
+
+// ==============   Cloudinary Integration   =====================================
+
+// This project uses Cloudinary for uploading and managing images such as doctor profile images, user profile pictures, and other media files.
+
+// Cloudinary is a cloud-based media management service that allows uploading, storing, optimizing, and delivering images and videos.
+
+// *********************************1. Install Required Package   ****************************
+
+// Install the Cloudinary SDK:
+// npm install cloudinary
+
+
+//************************************ */ 2. Environment Variables ********************************************
+
+// Create a .env file in the root directory and add your Cloudinary credentials.
+
+// CLOUDINARY_CLOUD_NAME=your_cloud_name
+// CLOUDINARY_API_KEY=your_api_key
+// CLOUDINARY_API_SECRET=your_api_secret
+
+// You can get these credentials from the Cloudinary Dashboard.
+
+
+// ****************************************** 3. Cloudinary Configuration  **************************************
+
+// File: config/cloudinary.js
+// This file configures Cloudinary using environment variables.
+
+
+
+// import { v2 as cloudinary } from "cloudinary";
+// import dotenv from "dotenv";
+
+// dotenv.config();
+
+// cloudinary.config({
+//   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+//   api_key: process.env.CLOUDINARY_API_KEY,
+//   api_secret: process.env.CLOUDINARY_API_SECRET,
+// });
+
+// export default cloudinary;
+
+
+// ***************************************** 4. Initialize Cloudinary in Server  ********************************
+
+// Import the Cloudinary configuration in the main server file.
+
+// File: server.js or app.js
+
+// import './config/cloudinary.js';
+
+// This ensures Cloudinary is initialized when the server starts.
+
+// ************************************* 5. Cloudinary Utility Functions *********************************
+
+// File: utils/cloudinaryUpload.js
+
+// This file contains functions to upload and delete files from Cloudinary.
+
+// Upload File to Cloudinary
+// export const uploadToCloudinary = async (filePath, folder = "doctors") => {
+//   try {
+//     const result = await cloudinary.uploader.upload(filePath, {
+//       folder: `doctor-appointment/${folder}`,
+//       resource_type: "auto",
+//     });
+
+//     return {
+//       public_id: result.public_id,
+//       url: result.secure_url,
+//     };
+//   } catch (error) {
+//     throw new Error(`Cloudinary Upload Error: ${error.message}`);
+//   }
+// };
+// Parameters
+// Parameter	Description
+// filePath	Local file path to upload
+// folder	Cloudinary folder name
+// Returns
+// {
+//   public_id: string,
+//   url: string
+// }
+// Delete File from Cloudinary
+// export const deleteFromCloudinary = async (publicId) => {
+//   try {
+//     const result = await cloudinary.uploader.destroy(publicId);
+//     return result;
+//   } catch (error) {
+//     throw new Error(`Cloudinary Delete Error: ${error.message}`);
+//   }
+// };
+// Parameters
+// Parameter	Description
+// publicId	Cloudinary public ID of the file
+
+
+// ****************************************** 6. Example Upload Flow **********************************************
+
+// User uploads image
+
+// Backend receives file
+
+// File is uploaded to Cloudinary
+
+// Cloudinary returns image URL and public_id
+
+// URL is stored in MongoDB
+
+// User → Backend → Cloudinary → Image URL → MongoDB
+// ************************************************* 7. Folder Structure *******************************************
+
+// Example Cloudinary folder structure used in this project:
+
+// doctor-appointment/
+//     doctors/
+//     users/
+//     reports/
+// ******************************************** 8. Benefits of Using Cloudinary *******************************
+
+// Secure image storage
+
+// Automatic image optimization
+
+// CDN delivery
+
+// Easy image deletion and management
+
+// Supports images, videos, PDFs, and more
+
+// ********************************************* 9. Example Response From Cloudinary *********************************
+// {
+//   "public_id": "doctor-appointment/doctors/abc123",
+//   "url": "https://res.cloudinary.com/demo/image/upload/v123456/doctor.jpg"
+// }
