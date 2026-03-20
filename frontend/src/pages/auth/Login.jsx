@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 // import { useAuth } from "@/contexts/AuthContext";
 // import useAuth from "../../contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 
 import {
   Card,
@@ -20,15 +20,21 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/contexts/AuthContext";
 
-// ✅ Schema
 const schema = z.object({
   email: z.string().email("Invalid email"),
   password: z.string().min(6, "Minimum 6 characters"),
 });
 
 export default function Login() {
-  const { login } = useAuth();
+  const { isAuthenticated, loading, login } = useAuth();
+  const [errorMsg, setErrorMsg] = useState("");
   const navigate = useNavigate();
+
+  if (loading) return null;
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const {
     register,
@@ -40,12 +46,14 @@ export default function Login() {
 
   const onSubmit = async (data) => {
     try {
-        // console.log(data)
+      // console.log(data)
+      setErrorMsg(""); // reset error
       await login(data);
-    //   console.log(resp)
-      navigate("/dashboard"); 
+      //   console.log(resp)
+      navigate("/dashboard");
     } catch (error) {
-      console.log(error);
+      // console.log(error);
+      setErrorMsg(error.response?.data?.message || "Something went wrong");
     }
   };
 
@@ -94,6 +102,11 @@ export default function Login() {
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? "Logging in..." : "Login"}
             </Button>
+            {errorMsg && (
+              <p className="text-red-500 font-bold text-sm text-center">
+                {errorMsg}
+              </p>
+            )}
           </form>
         </CardContent>
       </Card>
