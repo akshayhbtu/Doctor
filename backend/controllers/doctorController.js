@@ -3,6 +3,8 @@ import User from "../models/User.js";
 // import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 import { deleteFromCloudinary, uploadToCloudinary } from "../utils/cloudinary.js";
+import { normalizeTime } from "../utils/normalizeTime.js";
+
 
 export const registerDoctor = async (req, res) => {
   try {
@@ -15,44 +17,42 @@ export const registerDoctor = async (req, res) => {
       qualifications,
     } = req.body;
 
+    //  Validation
     if (!specialization || !experience || !consultationFee || !location) {
       return res.status(400).json({
+        success: false,
         message: "Please provide all required fields",
       });
     }
 
-    console.log(specialization, experience, hospital, location);
-
-    console.log(req.file);
-
+    //  Check image
     if (!req.file) {
       return res.status(400).json({
+        success: false,
         message: "Profile image is required",
       });
     }
 
-    // Upload image to Cloudinary
+    //  Prevent duplicate application
+    const existingDoctor = await Doctor.findOne({ userId: req.user._id });
+
+    if (existingDoctor) {
+      return res.status(400).json({
+        success: false,
+        message: "You have already applied as a doctor",
+      });
+    }
+
+    //  Upload image
     const result = await uploadToCloudinary(req.file.path);
 
-    console.log("result",result)
-
-    // Delete local file after upload
-    // delete local file
+    // ✅ 5. Delete local file
     if (fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }
 
-    // Update user role to doctor
-    const findUser = await User.findByIdAndUpdate(
-      req.user._id,
-      { role: "doctor" },
-      { new: true },
-    );
 
-    if (!findUser) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
+    //  Create doctor (PENDING)
     const doctor = await Doctor.create({
       userId: req.user._id,
       specialization,
@@ -64,19 +64,21 @@ export const registerDoctor = async (req, res) => {
         url: result.url,
         public_id: result.public_id,
       },
-      //profileImage: result.url,
       qualifications: qualifications ? JSON.parse(qualifications) : [],
-      isApproved: false,
+      status: "pending", 
     });
 
-    console.log("doctor",doctor)
-
     res.status(201).json({
+      success: true,
       message: "Doctor registration submitted. Waiting for admin approval.",
       doctor,
     });
+
   } catch (error) {
+    console.error("Register Doctor Error:", error);
+
     res.status(500).json({
+      success: false,
       message: error.message,
     });
   }
@@ -89,10 +91,12 @@ export const registerDoctor = async (req, res) => {
 
 export const getDoctors = async (req, res) => {
 
-   let query = { isApproved: true };
+   let query = { status: "approved" };
   try {
    const doctors = await Doctor.find(query).populate('userId', 'name email');
     //res.json(doctors);
+
+    // console.log(doctors)
 
     res.status(200).json(doctors);
   } catch (error) {
@@ -138,20 +142,35 @@ export const addAvailability = async (req, res) => {
       );
 
       if (existingDate) {
-        // ✅ Avoid duplicate slots
         for (let newSlot of slotDay.slots) {
+          const startTime = normalizeTime(newSlot.startTime);
+          const endTime = normalizeTime(newSlot.endTime);
+
           const isDuplicate = existingDate.slots.some(
             (s) =>
-              s.startTime === newSlot.startTime &&
-              s.endTime === newSlot.endTime
+              normalizeTime(s.startTime) === startTime &&
+              normalizeTime(s.endTime) === endTime
           );
 
           if (!isDuplicate) {
-            existingDate.slots.push(newSlot);
+            existingDate.slots.push({
+              startTime,
+              endTime,
+              isBooked: false,
+            });
           }
         }
       } else {
-        doctor.availableSlots.push(slotDay);
+        const formattedSlots = slotDay.slots.map((s) => ({
+          startTime: normalizeTime(s.startTime),
+          endTime: normalizeTime(s.endTime),
+          isBooked: false,
+        }));
+
+        doctor.availableSlots.push({
+          date: slotDay.date,
+          slots: formattedSlots,
+        });
       }
     }
 
@@ -159,10 +178,9 @@ export const addAvailability = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Availability updated (no duplicates)",
+      message: "Availability updated",
       doctor,
     });
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: error.message });
@@ -173,9 +191,6 @@ export const addAvailability = async (req, res) => {
 
 // updat the doctor profile 
 
-// import Doctor from "../models/Doctor.js";
-// import fs from "fs";
-// import { uploadToCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
 
 export const updateDoctorProfile = async (req, res) => {
   try {
