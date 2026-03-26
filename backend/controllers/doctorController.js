@@ -2,9 +2,11 @@ import Doctor from "../models/Doctor.js";
 import User from "../models/User.js";
 // import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
-import { deleteFromCloudinary, uploadToCloudinary } from "../utils/cloudinary.js";
+import {
+  deleteFromCloudinary,
+  uploadToCloudinary,
+} from "../utils/cloudinary.js";
 import { normalizeTime } from "../utils/normalizeTime.js";
-
 
 export const registerDoctor = async (req, res) => {
   try {
@@ -46,11 +48,10 @@ export const registerDoctor = async (req, res) => {
     //  Upload image
     const result = await uploadToCloudinary(req.file.path);
 
-    // ✅ 5. Delete local file
+    //  5. Delete local file
     if (fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }
-
 
     //  Create doctor (PENDING)
     const doctor = await Doctor.create({
@@ -65,7 +66,7 @@ export const registerDoctor = async (req, res) => {
         public_id: result.public_id,
       },
       qualifications: qualifications ? JSON.parse(qualifications) : [],
-      status: "pending", 
+      status: "pending",
     });
 
     res.status(201).json({
@@ -73,7 +74,6 @@ export const registerDoctor = async (req, res) => {
       message: "Doctor registration submitted. Waiting for admin approval.",
       doctor,
     });
-
   } catch (error) {
     console.error("Register Doctor Error:", error);
 
@@ -84,19 +84,44 @@ export const registerDoctor = async (req, res) => {
   }
 };
 
-
-
-
 /////////////////////////////////////////
 
 export const getDoctors = async (req, res) => {
-
-   let query = { status: "approved" };
+  let query = { status: "approved" };
   try {
-   const doctors = await Doctor.find(query).populate('userId', 'name email');
+    const { search, specialization, location, experience, feeRange } =
+      req.query;
+
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { specialization: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    if (specialization) query.specialization = specialization;
+    if (location) query.location = location;
+
+    if (experience) {
+      const [min, max] = experience.split("-");
+      query.experience = {
+        $gte: Number(min),
+        ...(max && { $lte: Number(max) }),
+      };
+    }
+
+    if (feeRange) {
+      const [min, max] = feeRange.split("-");
+      query.fees = {
+        $gte: Number(min),
+        ...(max && { $lte: Number(max) }),
+      };
+    }
+
+    const doctors = await Doctor.find(query).populate("userId", "name email");
     //res.json(doctors);
 
-    // console.log(doctors)
+    console.log(doctors);
 
     res.status(200).json(doctors);
   } catch (error) {
@@ -105,9 +130,6 @@ export const getDoctors = async (req, res) => {
     });
   }
 };
-
-
-
 
 // add availablity slots for doctor
 export const addAvailability = async (req, res) => {
@@ -138,7 +160,7 @@ export const addAvailability = async (req, res) => {
       const existingDate = doctor.availableSlots.find(
         (d) =>
           new Date(d.date).toDateString() ===
-          new Date(slotDay.date).toDateString()
+          new Date(slotDay.date).toDateString(),
       );
 
       if (existingDate) {
@@ -149,7 +171,7 @@ export const addAvailability = async (req, res) => {
           const isDuplicate = existingDate.slots.some(
             (s) =>
               normalizeTime(s.startTime) === startTime &&
-              normalizeTime(s.endTime) === endTime
+              normalizeTime(s.endTime) === endTime,
           );
 
           if (!isDuplicate) {
@@ -187,10 +209,7 @@ export const addAvailability = async (req, res) => {
   }
 };
 
-
-
-// updat the doctor profile 
-
+// updat the doctor profile
 
 export const updateDoctorProfile = async (req, res) => {
   try {
@@ -215,12 +234,13 @@ export const updateDoctorProfile = async (req, res) => {
     if (consultationFee) doctor.consultationFee = consultationFee;
     if (location) doctor.location = location;
 
-    
     if (qualifications) {
       try {
         doctor.qualifications = JSON.parse(qualifications);
       } catch {
-        return res.status(400).json({ message: "Invalid qualifications format" });
+        return res
+          .status(400)
+          .json({ message: "Invalid qualifications format" });
       }
     }
 
@@ -246,16 +266,40 @@ export const updateDoctorProfile = async (req, res) => {
 
     await doctor.save();
 
-
     res.status(200).json({
       success: true,
       message: "Doctor profile updated successfully",
       doctor,
     });
-
   } catch (error) {
     console.error("Update Doctor Error:", error);
 
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// get doctor profile
+
+export const getDoctorProfile = async (req, res) => {
+
+  const {id}= req.params;
+  try {
+
+    const findDoctor= await Doctor.findById(id).populate("userId","name email phoneNumber");
+
+    if(!findDoctor)
+    {
+      return res.status(404).json({ message: "Doctor not found" });
+    }
+
+    // console.log(findDoctor)
+
+    return res.status(200).json(findDoctor);
+
+  } catch (error) {
     res.status(500).json({
       success: false,
       message: error.message,
