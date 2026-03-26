@@ -14,7 +14,7 @@ export default function Layout({children}) {
 
         <div className='flex'>
 
-          {/* {isAuthenticated && <Sidebar/>} */}
+          {isAuthenticated && <Sidebar/>}
 
             <main className={`flex-1  ${isAuthenticated ? 'p-6' : ''} `}>
                 {children}
