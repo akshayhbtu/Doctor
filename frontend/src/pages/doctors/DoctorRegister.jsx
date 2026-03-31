@@ -39,7 +39,7 @@ import {
 import {
   Select,
   SelectContent,
-  //   SelectGroup,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -65,6 +65,9 @@ import {
   Briefcase,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 // Validation Schema
 const doctorFormSchema = z.object({
@@ -121,7 +124,7 @@ const DoctorRegistration = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm({
+  const formData = useForm({
     resolver: zodResolver(doctorFormSchema),
     defaultValues: {
       specialization: "",
@@ -136,7 +139,7 @@ const DoctorRegistration = () => {
   });
 
   const { fields, append, remove } = useFieldArray({
-    control: form.control,
+    control: formData.control,
     name: "qualifications",
   });
 
@@ -224,15 +227,15 @@ const DoctorRegistration = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form>
+          <form className="space-y-3">
             <div className="space-y-4 p-4 border rounded-lg bg-muted/30 ">
               <div className="flex items-center gap-2">
                 <Upload className="h-5 w-5 text-primary" />
                 <h3 className="font-semibold text-lg">Profile Image</h3>
               </div>
 
-              <div>
-                <div>
+              <div className="flex flex-col sm:flex-row items-center gap-6">
+                <div className="relative">
                   {imagePreview ? (
                     <div className="relative group">
                       <img
@@ -249,12 +252,214 @@ const DoctorRegistration = () => {
                       </button>
                     </div>
                   ) : (
-                    <div className="w-22 h-22 rounded-full bg-muted flex items-center justify-center border-2 border-dashed border-muted-foreground/30">
+                    <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center border-2 border-dashed border-muted-foreground/30">
                       <Upload className="h-10 w-10 text-muted-foreground" />
                     </div>
                   )}
                 </div>
+
+                <div className="flex-1">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    className="cursor-pointer"
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Upload a professional photo (JPEG, PNG, max 5MB). This will
+                    be visible to patients.
+                  </p>
+                </div>
               </div>
+            </div>
+
+            {/* Basic Information */}
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Briefcase className="h-5 w-5 text-primary" />
+                <h3 className="font-semibold text-lg">
+                  Professional Information
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label>Specialization</Label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your specialization" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {/* <SelectGroup> */}
+                      {specializations.map((spec) => (
+                        <SelectItem key={spec.value} value={spec.value}>
+                          {spec.label}
+                        </SelectItem>
+                      ))}
+                      {/* </SelectGroup> */}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Experience */}
+
+                <div className="space-y-2">
+                  <Label>Years of Experience *</Label>
+
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      name="experience"
+                      placeholder="e.g., 5"
+                      //   value={formData.experience}
+                      //   onChange={handleChange}
+                      className="pl-8"
+                    />
+
+                    <Briefcase className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  </div>
+
+                  <p className="text-sm text-muted-foreground">
+                    Total years of practice
+                  </p>
+                </div>
+
+                {/* Hospital */}
+
+                <div className="space-y-2">
+                  <Label>Hospital/Clinic Name </Label>
+                  <div className="relative">
+                    <Hospital className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Enter hospital/clinic name"
+                      className="pl-8"
+                    />
+                  </div>
+                </div>
+
+                {/* Consultation Fee */}
+                <div className="space-y-2">
+                  <Label>Consultation Fee *</Label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="number"
+                      placeholder="e.g., 100"
+                      className="pl-8"
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Set your consultation fee in INR. Patients will see this
+                  </p>
+                </div>
+              </div>
+
+              {/* Location */}
+
+              <div className="space-y-2">
+                <Label>Location </Label>
+
+                <div className="relative">
+                  <MapPin className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="City, State (e.g., Mumbai, Maharashtra)"
+                    className="pl-8"
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Where do you practice?
+                </p>
+              </div>
+            </div>
+
+           
+
+            
+
+            {/* Qualifications */}
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <GraduationCap className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold text-lg">Qualifications *</h3>
+                </div>
+
+                <Button
+                  type="button"
+                  onClick={() =>
+                    append({
+                      degree: "",
+                      institution: "",
+                      year: "",
+                    })
+                  }
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Qualification
+                </Button>
+              </div>
+
+              {fields.map((item, index) => (
+                <div key={item.id} className="border p-4 rounded space-y-3">
+                  <div className="flex items-center gap-2">
+                    <GraduationCap className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium">
+                      Qualification {index + 1}
+                    </span>
+                  </div>
+
+                  {/* Remove button */}
+                  {index > 0 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => remove(index)}
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Remove
+                    </Button>
+                  )}
+
+                  {/* Degree */}
+                  <div className="space-y-2">
+                    <Label>Degree</Label>
+                    <input
+                      {...formData.register(`qualifications.${index}.degree`)}
+                      // placeholder="Degree"
+                      placeholder="e.g., MBBS, MD, MS"
+                      className="w-full border p-2 rounded"
+                    />
+                  </div>
+
+                  {/* Institution */}
+
+                  <div className="space-y-2">
+                    <Label>Institution</Label>
+                    <input
+                      {...formData.register(
+                        `qualifications.${index}.institution`,
+                      )}
+                      //   placeholder="Institution"
+                      placeholder="University/College name"
+                      className="w-full border p-2 rounded"
+                    />
+                  </div>
+
+                  {/* Year */}
+
+                  <div className="space-y-2">
+                    <Label>Year of Completion</Label>
+                    <input
+                      type="number"
+                      {...formData.register(`qualifications.${index}.year`)}
+                      placeholder="e.g., 2000 Year"
+                      className="w-full border p-2 rounded"
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
           </form>
         </CardContent>
