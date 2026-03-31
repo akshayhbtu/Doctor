@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 // import { useAuth } from "@/contexts/AuthContext";
 // import useAuth from "../../contexts/AuthContext";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -109,6 +110,15 @@ export default function Login() {
             )}
           </form>
         </CardContent>
+
+        <CardFooter>
+          <p className="text-sm text-muted-foreground text-center w-full">
+            Don't have an account?{" "}
+            <Link to="/register" className="text-primary hover:underline">
+              Sign up
+            </Link>
+          </p>
+        </CardFooter>
       </Card>
     </div>
   );

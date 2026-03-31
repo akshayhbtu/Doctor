@@ -13,6 +13,7 @@ import AdminDashboard from "./pages/dashboard/AdminDashboard";
 import {  QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import DoctorSearch from "./pages/doctors/DoctorSearch";
 import DoctorProfile from "./pages/doctors/DoctorProfile";
+import DoctorRegister from "./pages/doctors/DoctorRegister";
 
 
 const DashboardRouter = () => {
@@ -50,6 +51,16 @@ function App() {
              <Route path="/doctors/:id" element={<DoctorProfile />} />
 
             <Route path="/register" element={<Register />} />
+
+            <Route  path="/doctor/register"
+            element={
+              <ProtectedRoute  allowedRoles={['user']} >
+                <DoctorRegister/>
+              </ProtectedRoute>
+            }
+             />
+
+
 
             <Route
               path="/dashboard"
