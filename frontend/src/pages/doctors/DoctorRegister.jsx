@@ -4,15 +4,7 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 // import api from '../../lib/api';
-// import { useAuth } from '../../contexts/AuthContext';
-// import { Button } from '../../components/ui/button';
-// import {
-//   Card,
-//   CardContent,
-//   CardDescription,
-//   CardHeader,
-//   CardTitle,
-// } from '../../components/ui/card';
+import { toast } from "sonner";
 
 import {
   Card,
@@ -24,18 +16,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-// import {
-//   Form,
-//   FormControl,
-//   FormDescription,
-//   FormField,
-//   FormItem,
-//   FormLabel,
-//   FormMessage,
-// } from '../../components/ui/form';
-// import { Input } from '../../components/ui/input';
-// import { Textarea } from '../../components/ui/textarea';
-
 import {
   Select,
   SelectContent,
@@ -45,14 +25,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-// import {
-//   Select,
-//   SelectContent,
-//   SelectItem,
-//   SelectTrigger,
-//   SelectValue,
-// } from '../../components/ui/select';
-// import { toast } from 'sonner';
 import {
   Loader2,
   Upload,
@@ -68,6 +40,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import api from "@/lib/api";
 
 // Validation Schema
 const doctorFormSchema = z.object({
@@ -124,7 +97,7 @@ const DoctorRegistration = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const formData = useForm({
+  const formElement = useForm({
     resolver: zodResolver(doctorFormSchema),
     defaultValues: {
       specialization: "",
@@ -138,8 +111,10 @@ const DoctorRegistration = () => {
     },
   });
 
+  //   console.log("formElement",formElement)
+
   const { fields, append, remove } = useFieldArray({
-    control: formData.control,
+    control: formElement.control,
     name: "qualifications",
   });
 
@@ -186,23 +161,36 @@ const DoctorRegistration = () => {
     formData.append("qualifications", JSON.stringify(data.qualifications));
 
     try {
-      const response = await api.post("/doctors/register", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      // console.log(formData);
 
-      toast.success(
-        response.data.message || "Doctor registration submitted successfully!",
-      );
-      toast.info(
-        "Your application is pending admin approval. You will be notified once approved.",
-      );
+      // formData.forEach((value, key) => {
+      //   console.log(key, value);
+      // });
+
+        const response = await api.post("/doctors/register", formData);
+
+        // console.log("response",response);
+
+        if(response.success==true){
+          toast.success(
+            response.message || "Doctor registration submitted successfully!",
+          )
+        }
+        else{
+          toast.error(
+            response.message || "Registration failed. Please try again.",
+          );
+        }
+
+
+        toast.info(
+          "Your application is pending admin approval. You will be notified once approved.",
+        );
 
       // Navigate to dashboard after successful registration
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 2000);
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 2000);
     } catch (error) {
       console.error("Registration error:", error);
       toast.error(
@@ -227,7 +215,10 @@ const DoctorRegistration = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="space-y-3">
+          <form
+            className="space-y-3"
+            onSubmit={formElement.handleSubmit(onSubmit)}
+          >
             <div className="space-y-4 p-4 border rounded-lg bg-muted/30 ">
               <div className="flex items-center gap-2">
                 <Upload className="h-5 w-5 text-primary" />
@@ -263,6 +254,7 @@ const DoctorRegistration = () => {
                     type="file"
                     accept="image/*"
                     className="cursor-pointer"
+                    onChange={handleImageChange}
                   />
                   <p className="text-xs text-muted-foreground mt-2">
                     Upload a professional photo (JPEG, PNG, max 5MB). This will
@@ -285,7 +277,11 @@ const DoctorRegistration = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label>Specialization</Label>
-                  <Select>
+                  <Select
+                    onValueChange={(value) =>
+                      formElement.setValue("specialization", value)
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select your specialization" />
                     </SelectTrigger>
@@ -313,6 +309,7 @@ const DoctorRegistration = () => {
                       placeholder="e.g., 5"
                       //   value={formData.experience}
                       //   onChange={handleChange}
+                      {...formElement.register("experience")}
                       className="pl-8"
                     />
 
@@ -331,6 +328,7 @@ const DoctorRegistration = () => {
                   <div className="relative">
                     <Hospital className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
+                      {...formElement.register("hospital")}
                       placeholder="Enter hospital/clinic name"
                       className="pl-8"
                     />
@@ -346,6 +344,7 @@ const DoctorRegistration = () => {
                       type="number"
                       placeholder="e.g., 100"
                       className="pl-8"
+                      {...formElement.register("consultationFee")}
                     />
                   </div>
                   <p className="text-sm text-muted-foreground">
@@ -362,6 +361,7 @@ const DoctorRegistration = () => {
                 <div className="relative">
                   <MapPin className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
+                    {...formElement.register("location")}
                     placeholder="City, State (e.g., Mumbai, Maharashtra)"
                     className="pl-8"
                   />
@@ -371,10 +371,6 @@ const DoctorRegistration = () => {
                 </p>
               </div>
             </div>
-
-           
-
-            
 
             {/* Qualifications */}
             <div className="space-y-6">
@@ -426,7 +422,9 @@ const DoctorRegistration = () => {
                   <div className="space-y-2">
                     <Label>Degree</Label>
                     <input
-                      {...formData.register(`qualifications.${index}.degree`)}
+                      {...formElement.register(
+                        `qualifications.${index}.degree`,
+                      )}
                       // placeholder="Degree"
                       placeholder="e.g., MBBS, MD, MS"
                       className="w-full border p-2 rounded"
@@ -438,7 +436,7 @@ const DoctorRegistration = () => {
                   <div className="space-y-2">
                     <Label>Institution</Label>
                     <input
-                      {...formData.register(
+                      {...formElement.register(
                         `qualifications.${index}.institution`,
                       )}
                       //   placeholder="Institution"
@@ -453,13 +451,28 @@ const DoctorRegistration = () => {
                     <Label>Year of Completion</Label>
                     <input
                       type="number"
-                      {...formData.register(`qualifications.${index}.year`)}
+                      {...formElement.register(`qualifications.${index}.year`)}
                       placeholder="e.g., 2000 Year"
                       className="w-full border p-2 rounded"
                     />
                   </div>
                 </div>
               ))}
+            </div>
+            <div className="flex gap-4 pt-6 border-t">
+              <Button
+                type="submit"
+                className="flex-1"
+                disabled={isSubmitting || !profileImage}
+                size="lg"
+              >
+                {isSubmitting && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                {isSubmitting
+                  ? "Submitting Application..."
+                  : "Submit Application"}
+              </Button>
             </div>
           </form>
         </CardContent>

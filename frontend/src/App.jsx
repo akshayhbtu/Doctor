@@ -1,5 +1,3 @@
-
-
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import Layout from "./components/Layout/Layout";
@@ -10,11 +8,14 @@ import ProtectedRoute from "./components/Layout/ProtectedRoute";
 import PatientDashboard from "./pages/dashboard/PatientDashboard";
 import DoctorDashboard from "./pages/dashboard/DoctorDashboard";
 import AdminDashboard from "./pages/dashboard/AdminDashboard";
-import {  QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import DoctorSearch from "./pages/doctors/DoctorSearch";
 import DoctorProfile from "./pages/doctors/DoctorProfile";
 import DoctorRegister from "./pages/doctors/DoctorRegister";
-
+import { Toaster } from "sonner";
+import DoctorApproval from "./pages/admin/DoctorApproval";
+// import toast from "react-hot-toast";
+// import { Toaster } from "react-hot-toast";
 
 const DashboardRouter = () => {
   const { user } = useAuth();
@@ -31,7 +32,7 @@ const DashboardRouter = () => {
   }
 };
 
-const queryClient= new QueryClient();
+const queryClient = new QueryClient();
 
 function App() {
   return (
@@ -39,42 +40,49 @@ function App() {
       {/* <Router> */}
 
       <QueryClientProvider client={queryClient}>
+        <Toaster />
 
+        <AuthProvider>
+          <Layout>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/doctors/search" element={<DoctorSearch />} />
 
-      <AuthProvider>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/doctors/search" element={<DoctorSearch/>} />
+              <Route path="/doctors/:id" element={<DoctorProfile />} />
 
-             <Route path="/doctors/:id" element={<DoctorProfile />} />
+              <Route path="/register" element={<Register />} />
 
-            <Route path="/register" element={<Register />} />
+              <Route
+                path="/doctor/register"
+                element={
+                  <ProtectedRoute allowedRoles={["user"]}>
+                    <DoctorRegister />
+                  </ProtectedRoute>
+                }
+              />
 
-            <Route  path="/doctor/register"
-            element={
-              <ProtectedRoute  allowedRoles={['user']} >
-                <DoctorRegister/>
-              </ProtectedRoute>
-            }
-             />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <DashboardRouter />
+                  </ProtectedRoute>
+                }
+              />
 
-
-
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <DashboardRouter />
+              <Route
+                path="/admin/approvals"
+                element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <DoctorApproval/>
                 </ProtectedRoute>
               }
-            />
-          </Routes>
-        </Layout>
-      </AuthProvider>
+              />
+            </Routes>
+          </Layout>
+        </AuthProvider>
       </QueryClientProvider>
-
     </>
   );
 }
