@@ -19,6 +19,7 @@ export const AuthProvider = ({ children }) => {
   const getme = async () => {
     try {
       const res = await api.get("/auth/me");
+      // console.log(res);
       setUser(res.user);
     } catch (error) {
       setUser(null);
@@ -31,6 +32,8 @@ export const AuthProvider = ({ children }) => {
     const resp = await api.post("/auth/login", data);
     // console.log(resp);
     setUser(resp.user);
+
+    return resp.user || resp;
   };
 
   const register = async (data) => {

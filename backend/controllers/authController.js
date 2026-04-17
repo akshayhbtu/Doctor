@@ -4,13 +4,14 @@ import bcrypt from "bcryptjs";
 
 export const register = async (req, res) => {
   try {
-    const { name, email, password, role, phoneNumber, address } = req.body;
+    const { name, email, password, role, phoneNumber, address, dob, gender } = req.body;
 
-    if (!name || !email || !password || !phoneNumber || !address) {
-      return res
-        .status(400)
-        .json({ message: "Please provide all required fields" });
+    if (!name || !email || !password || !phoneNumber || !address || !dob || !gender) {
+      return res.status(400).json({
+        message: "Please provide all required fields",
+      });
     }
+
 
     // console.log("resister",email,password,role);
 
@@ -31,6 +32,8 @@ export const register = async (req, res) => {
       role: role || "user",
       phoneNumber,
       address,
+      dob,
+      gender,
     });
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
@@ -123,12 +126,9 @@ export const logout = (req, res) => {
   });
 };
 
-
-export const getProfile = async(req,res)=>{
-
+export const getProfile = async (req, res) => {
   try {
-
-    const user= await User.findById(req.user._id).select("-password");
+    const user = await User.findById(req.user._id).select("-password");
 
     if (!user) {
       return res.status(404).json({
@@ -141,11 +141,10 @@ export const getProfile = async(req,res)=>{
       success: true,
       user,
     });
-    
   } catch (error) {
     res.status(500).json({
       success: false,
       message: error.message,
     });
   }
-}
+};

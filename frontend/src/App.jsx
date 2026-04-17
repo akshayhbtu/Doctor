@@ -10,25 +10,45 @@ import DoctorDashboard from "./pages/dashboard/DoctorDashboard";
 import AdminDashboard from "./pages/dashboard/AdminDashboard";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import DoctorSearch from "./pages/doctors/DoctorSearch";
-import DoctorProfile from "./pages/doctors/DoctorProfile";
+// import DoctorProfile from "./pages/doctors/DoctorProfile";
 import DoctorRegister from "./pages/doctors/DoctorRegister";
 import { Toaster } from "sonner";
 import DoctorApproval from "./pages/admin/DoctorApproval";
-// import toast from "react-hot-toast";
-// import { Toaster } from "react-hot-toast";
+// import DoctorSlotManager from "./components/Doctors/DoctorSlotManager"; // ✅ Fixed spelling
+import UserProfile from "./pages/profile/UserProfile";
+import Settings from "./pages/setting/Settings";
+import Reviews from "./pages/Review/Reviews";
+import Chat from "./pages/chat/Chat";
+import DoctorAppointment from "./pages/appointments/DoctorAppointment";
+import DoctorPatients from "./pages/doctors/DoctorPatients";
+import DoctorEarning from "./pages/doctors/DoctorEarning";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import NotFound from "./pages/NotFound";
+import DoctorReview from "./pages/Review/DoctorReview";
+import DoctorSetting from "./pages/setting/DoctorSetting";
+import PatientAppointment from "./pages/appointments/PatientAppointment";
+// import DoctorProfilePage from "./pages/profile/DoctorProfilePage"; // ✅ Added for doctor profile
+import DoctorSlotManager from "./components/Doctors/DoctorSlotManger";
+import DoctorProfile from "./pages/doctors/DoctorProfile";
 
-const DashboardRouter = () => {
-  const { user } = useAuth();
+// Role-based redirect component
+const RoleBasedRedirect = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) return null;
+
+  if (!user) return <Navigate to="/login" replace />;
 
   switch (user?.role) {
     case "user":
-      return <PatientDashboard />;
+      return <Navigate to="/dashboard" replace />;
     case "doctor":
-      return <DoctorDashboard />;
+      return <Navigate to="/doctor/dashboard" replace />;
     case "admin":
-      return <AdminDashboard />;
+      return <Navigate to="/admin/dashboard" replace />;
     default:
-      return <Navigate to="/" replace />;
+      return <Navigate to="/login" replace />;
   }
 };
 
@@ -36,54 +56,200 @@ const queryClient = new QueryClient();
 
 function App() {
   return (
-    <>
-      {/* <Router> */}
+    <QueryClientProvider client={queryClient}>
+      <Toaster richColors position="top-right" />
+      <AuthProvider>
+        <Layout>
+          <Routes>
+            {/* ==================== PUBLIC ROUTES ==================== */}
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/doctors/search" element={<DoctorSearch />} />
+            <Route path="/doctors/:id" element={<DoctorProfile />} />
+            <Route path="/redirect" element={<RoleBasedRedirect />} />
 
-      <QueryClientProvider client={queryClient}>
-        <Toaster />
-
-        <AuthProvider>
-          <Layout>
-            <Routes>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/doctors/search" element={<DoctorSearch />} />
-
-              <Route path="/doctors/:id" element={<DoctorProfile />} />
-
-              <Route path="/register" element={<Register />} />
-
-              <Route
-                path="/doctor/register"
-                element={
-                  <ProtectedRoute allowedRoles={["user"]}>
-                    <DoctorRegister />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <DashboardRouter />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/admin/approvals"
-                element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <DoctorApproval/>
+            {/* ==================== PATIENT (USER) ROUTES ==================== */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={["user"]}>
+                  <PatientDashboard />
                 </ProtectedRoute>
               }
-              />
-            </Routes>
-          </Layout>
-        </AuthProvider>
-      </QueryClientProvider>
-    </>
+            />
+
+            <Route
+              path="/appointments"
+              element={
+                <ProtectedRoute allowedRoles={["user"]}>
+                  <PatientAppointment />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute allowedRoles={["user"]}>
+                  <UserProfile />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute allowedRoles={["user", "doctor", "admin"]}>
+                  <Settings />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/reviews"
+              element={
+                <ProtectedRoute allowedRoles={["user", "doctor"]}>
+                  <Reviews />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ==================== DOCTOR ROUTES ==================== */}
+            <Route
+              path="/doctor/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={["doctor"]}>
+                  <DoctorDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/doctor/register"
+              element={
+                <ProtectedRoute allowedRoles={["user"]}>
+                  <DoctorRegister />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/doctor/availability"
+              element={
+                <ProtectedRoute allowedRoles={["doctor"]}>
+                  <DoctorSlotManager />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/doctor/appointments"
+              element={
+                <ProtectedRoute allowedRoles={["doctor"]}>
+                  <DoctorAppointment />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/doctor/patients"
+              element={
+                <ProtectedRoute allowedRoles={["doctor"]}>
+                  <DoctorPatients />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/doctor/earnings"
+              element={
+                <ProtectedRoute allowedRoles={["doctor"]}>
+                  <DoctorEarning />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/doctor/profile"
+              element={
+                <ProtectedRoute allowedRoles={["doctor"]}>
+                  <DoctorProfile />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/doctor/reviews"
+              element={
+                <ProtectedRoute allowedRoles={["doctor"]}>
+                  <DoctorReview />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/doctor/settings"
+              element={
+                <ProtectedRoute allowedRoles={["doctor"]}>
+                  <DoctorSetting />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ==================== ADMIN ROUTES ==================== */}
+            <Route
+              path="/admin/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/approvals"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <DoctorApproval />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/users"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AdminUsers />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/analytics"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <AdminAnalytics />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ==================== COMMON ROUTES (Multiple Roles) ==================== */}
+            <Route
+              path="/chat/:appointmentId"
+              element={
+                <ProtectedRoute allowedRoles={["user", "doctor"]}>
+                  <Chat />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ==================== 404 NOT FOUND ==================== */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Layout>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 

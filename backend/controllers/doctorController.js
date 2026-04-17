@@ -16,11 +16,18 @@ export const registerDoctor = async (req, res) => {
       hospital,
       consultationFee,
       location,
+      bio,
       qualifications,
     } = req.body;
 
     //  Validation
-    if (!specialization || !experience || !consultationFee || !location) {
+    if (
+      !specialization ||
+      !bio ||
+      !experience ||
+      !consultationFee ||
+      !location
+    ) {
       return res.status(400).json({
         success: false,
         message: "Please provide all required fields",
@@ -58,6 +65,7 @@ export const registerDoctor = async (req, res) => {
       userId: req.user._id,
       specialization,
       experience,
+      bio,
       hospital,
       consultationFee,
       location,
@@ -284,25 +292,109 @@ export const updateDoctorProfile = async (req, res) => {
 // get doctor profile
 
 export const getDoctorProfile = async (req, res) => {
-
-  const {id}= req.params;
+  const { id } = req.params;
   try {
+    const findDoctor = await Doctor.findById(id).populate(
+      "userId",
+      "name email phoneNumber",
+    );
 
-    const findDoctor= await Doctor.findById(id).populate("userId","name email phoneNumber");
-
-    if(!findDoctor)
-    {
+    if (!findDoctor) {
       return res.status(404).json({ message: "Doctor not found" });
     }
 
     // console.log(findDoctor)
 
     return res.status(200).json(findDoctor);
-
   } catch (error) {
     res.status(500).json({
       success: false,
       message: error.message,
+    });
+  }
+};
+
+// ✅ NEW: Get Doctor Profile by User ID
+export const getDoctorByUserId  = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const findDoctor = await Doctor.findOne({ userId }).populate(
+      "userId",
+      "name email phoneNumber",
+    );
+
+    if (!findDoctor) {
+      return res.status(404).json({
+        success: false,
+        message: "Doctor not found for this user",
+      });
+    }
+
+    return res.status(200).json(findDoctor);
+  } catch (error) {
+    console.error("Get Doctor By UserId Error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+
+
+
+
+// Delete a specific slot
+export const deleteSlot = async (req, res) => {
+  try {
+    const { date, startTime, endTime } = req.body;
+    
+    const doctor = await Doctor.findOne({ userId: req.user._id });
+    if (!doctor) {
+      return res.status(404).json({ message: "Doctor not found" });
+    }
+    
+    const selectedDate = new Date(date);
+    const dateSlot = doctor.availableSlots.find(
+      d => new Date(d.date).toDateString() === selectedDate.toDateString()
+    );
+    
+    if (!dateSlot) {
+      return res.status(404).json({ message: "Date slot not found" });
+    }
+    
+    const slotIndex = dateSlot.slots.findIndex(
+      s => s.startTime === startTime && s.endTime === endTime
+    );
+    
+    if (slotIndex === -1) {
+      return res.status(404).json({ message: "Slot not found" });
+    }
+    
+    if (dateSlot.slots[slotIndex].isBooked) {
+      return res.status(400).json({ message: "Cannot delete a booked slot" });
+    }
+    
+    dateSlot.slots.splice(slotIndex, 1);
+    
+    // If no slots left for this date, remove the entire date entry
+    if (dateSlot.slots.length === 0) {
+      doctor.availableSlots = doctor.availableSlots.filter(
+        d => new Date(d.date).toDateString() !== selectedDate.toDateString()
+      );
+    }
+    
+    await doctor.save();
+    
+    res.status(200).json({
+      success: true,
+      message: "Slot deleted successfully"
+    });
+  } catch (error) {
+    console.error("Delete Slot Error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message
     });
   }
 };

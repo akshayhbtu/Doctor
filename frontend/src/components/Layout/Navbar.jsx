@@ -1,12 +1,8 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-// import { Button } from "../ui/button";
-import { Bell, LogOut, Settings, User } from "lucide-react";
-
+import { Bell, LogOut, Settings, User, Calendar, Users, Clock, Home } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-
 import { Button } from "@/components/ui/button";
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,31 +11,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function Navbar() {
+  const { user, logout, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
-  const {user,logout, isAuthenticated}= useAuth();
-
-  const navigate= useNavigate();
-
-  const handleLogout=()=>{
+  const handleLogout = () => {
     logout();
-
-    navigate("/login");
-  }
-
-
-  // const isAuthenticated = true;
-
-  // const user = {
-  //   name: "Akshay",
-  //   email: "akshay@gmail.com",
-  //   role: "user",
-  //   profileImage: "https://avatars.githubusercontent.com/u/12345678?v=4",
-  // };
+    navigate("/");
+  };
 
   const getInitials = (name) => {
     return name
@@ -49,9 +31,70 @@ export default function Navbar() {
       .toUpperCase();
   };
 
+  // ✅ Role-based navigation items
+  const getNavLinks = () => {
+    if (!user) return [];
+    
+    switch (user?.role) {
+      case "user":
+        return [
+          { label: "Dashboard", href: "/dashboard", icon: Home },
+          { label: "My Appointments", href: "/appointments", icon: Calendar },
+          { label: "Find Doctors", href: "/doctors/search", icon: Users },
+        ];
+      case "doctor":
+        return [
+          { label: "Dashboard", href: "/doctor/dashboard", icon: Home },
+          { label: "Appointments", href: "/doctor/appointments", icon: Calendar },
+          { label: "Availability", href: "/doctor/availability", icon: Clock },
+          { label: "My Patients", href: "/doctor/patients", icon: Users },
+        ];
+      case "admin":
+        return [
+          { label: "Dashboard", href: "/admin/dashboard", icon: Home },
+          { label: "Doctor Approvals", href: "/admin/approvals", icon: Users },
+          { label: "User Management", href: "/admin/users", icon: Users },
+          { label: "Analytics", href: "/admin/analytics", icon: Clock },
+        ];
+      default:
+        return [];
+    }
+  };
+
+  const navLinks = getNavLinks();
+
+  // ✅ Profile menu items based on role
+  const getProfileLinks = () => {
+    if (!user) return [];
+    
+    switch (user?.role) {
+      case "user":
+        return [
+          { label: "Profile", href: "/profile", icon: User },
+          { label: "Settings", href: "/settings", icon: Settings },
+        ];
+      case "doctor":
+        return [
+          { label: "Profile", href: "/doctor/profile", icon: User },
+          { label: "Settings", href: "/settings", icon: Settings },
+          { label: "Earnings", href: "/doctor/earnings", icon: Clock },
+        ];
+      case "admin":
+        return [
+          { label: "Profile", href: "/admin/profile", icon: User },
+          { label: "Settings", href: "/admin/settings", icon: Settings },
+        ];
+      default:
+        return [];
+    }
+  };
+
+  const profileLinks = getProfileLinks();
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 px-2 md:px-4 items-center justify-between">
+        {/* Logo */}
         <div className="flex items-center gap-10">
           <Link to="/" className="flex items-center space-x-2">
             <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
@@ -62,51 +105,44 @@ export default function Navbar() {
             </span>
           </Link>
 
-          {isAuthenticated && (
+          {/* ✅ Dynamic Navigation Links - Role based */}
+          {isAuthenticated && navLinks.length > 0 && (
             <nav className="hidden md:flex items-center space-x-4">
-              <Link
-                to="/dashboard"
-                className="text-sm font-medium transition-colors hover:text-primary"
-              >
-                Dashboard
-              </Link>
-              <Link
-                to="/appointments"
-                className="text-sm font-medium transition-colors hover:text-primary"
-              >
-                Appointments
-              </Link>
-
-              <Link
-                to="/doctors/search"
-                className="text-sm font-medium transition-colors hover:text-primary"
-              >
-                Find Doctors
-              </Link>
+              {navLinks.map((link, index) => (
+                <Link
+                  key={index}
+                  to={link.href}
+                  className="text-sm font-medium transition-colors hover:text-primary flex items-center gap-1"
+                >
+                  <link.icon className="h-4 w-4" />
+                  {link.label}
+                </Link>
+              ))}
             </nav>
           )}
         </div>
 
+        {/* Right Side - Notifications & User Menu */}
         <div className="flex items-center gap-4">
           {isAuthenticated ? (
             <>
+              {/* Notifications */}
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="h-5 w-5" />
-
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center">
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-red-500">
                   3
                 </Badge>
               </Button>
 
+              {/* User Dropdown Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="relative h-8 w-8 rounded-full"
-                  >
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={user?.profileImage} alt={user?.name} />
-                      <AvatarFallback>{getInitials(user?.name)}</AvatarFallback>
+                      <AvatarFallback className="bg-primary/10 text-primary">
+                        {getInitials(user?.name)}
+                      </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
@@ -119,26 +155,26 @@ export default function Navbar() {
                       <p className="text-xs leading-none text-muted-foreground">
                         {user?.email}
                       </p>
-                      <Badge variant="outline" className="mt-1 w-fit">
-                        {user?.role}
+                      <Badge 
+                        variant="outline" 
+                        className="mt-1 w-fit"
+                      >
+                        {user?.role === "user" ? "Patient" : user?.role === "doctor" ? "Doctor" : "Admin"}
                       </Badge>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
 
-                  <DropdownMenuItem>
-                    <User className="mr-2 h-4 w-4" />
-                    Profile
-                  </DropdownMenuItem>
-                  {/* <DropdownMenuItem>Support</DropdownMenuItem> */}
-                  <DropdownMenuItem>
-                    <Settings className="mr-2 h-4 w-4" />
-                    Settings
-                  </DropdownMenuItem>
+                  {/* ✅ Dynamic Profile Links */}
+                  {profileLinks.map((link, index) => (
+                    <DropdownMenuItem key={index} onClick={() => navigate(link.href)}>
+                      <link.icon className="mr-2 h-4 w-4" />
+                      {link.label}
+                    </DropdownMenuItem>
+                  ))}
 
                   <DropdownMenuSeparator />
-
-                  <DropdownMenuItem onClick={handleLogout} >
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
                     <LogOut className="mr-2 h-4 w-4" />
                     Log out
                   </DropdownMenuItem>

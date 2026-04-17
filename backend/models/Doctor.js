@@ -10,6 +10,10 @@ const doctorSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  bio: {
+    type: String,
+    required: true,
+  },
   experience: {
     type: Number,
     required: true,
@@ -37,6 +41,10 @@ const doctorSchema = new mongoose.Schema({
       year: Number,
     },
   ],
+  rejectionReason: {
+    type: String,
+    default: "",
+  },
 
   availableSlots: [
     {
