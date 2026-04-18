@@ -1,5 +1,5 @@
-import mongoose from "mongoose"
-
+// backend/models/Chat.js
+import mongoose from "mongoose";
 
 const chatSchema = new mongoose.Schema({
   participants: [{
@@ -8,7 +8,9 @@ const chatSchema = new mongoose.Schema({
   }],
   appointmentId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Appointment'
+    ref: 'Appointment',
+    required: true,
+    unique: true
   },
   messages: [{
     senderId: {
@@ -16,7 +18,15 @@ const chatSchema = new mongoose.Schema({
       ref: 'User',
       required: true
     },
-    senderName: String,
+    senderName: {
+      type: String,
+      required: true
+    },
+    senderRole: {
+      type: String,
+      enum: ['user', 'doctor'],
+      required: true
+    },
     message: {
       type: String,
       required: true
@@ -31,15 +41,21 @@ const chatSchema = new mongoose.Schema({
     }
   }],
   lastMessage: {
-    type: String
+    type: String,
+    default: ""
   },
   lastMessageTime: {
-    type: Date
+    type: Date,
+    default: Date.now
   },
   createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
     type: Date,
     default: Date.now
   }
 });
 
-module.exports = mongoose.model('Chat', chatSchema);
+export default mongoose.model('Chat', chatSchema);

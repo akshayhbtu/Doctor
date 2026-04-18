@@ -8,7 +8,6 @@ import { useNavigate } from 'react-router-dom';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -33,7 +32,6 @@ import {
   AlertCircle,
   Phone,
   Mail,
-  Video,
 } from 'lucide-react';
 
 export default function PatientAppointment() {
@@ -42,12 +40,11 @@ export default function PatientAppointment() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('upcoming');
 
-  // Fetch user's appointments (using /user endpoint)
+  // Fetch user's appointments
   const { data: appointmentsData, isLoading, refetch } = useQuery({
     queryKey: ['patientAppointments', user?._id],
     queryFn: async () => {
       const response = await api.get('/appointment/user');
-      console.log('Appointments response:', response);
       return response;
     },
     enabled: !!user?._id,
@@ -73,7 +70,7 @@ export default function PatientAppointment() {
     enabled: !!user?._id,
   });
 
-  // Cancel appointment mutation (using status update)
+  // Cancel appointment mutation
   const cancelAppointmentMutation = useMutation({
     mutationFn: async (appointmentId) => {
       const response = await api.put(`/appointment/${appointmentId}/status`, {
@@ -93,7 +90,6 @@ export default function PatientAppointment() {
     },
   });
 
-  // Get status badge
   const getStatusBadge = (status) => {
     switch (status) {
       case 'pending':
@@ -111,7 +107,6 @@ export default function PatientAppointment() {
     }
   };
 
-  // Get appointments based on active tab
   const getAppointments = () => {
     if (activeTab === 'upcoming') {
       return upcomingData?.data || [];
@@ -167,7 +162,6 @@ export default function PatientAppointment() {
     const canReview = appointment.status === 'completed';
     const canChat = appointment.status === 'approved';
 
-    // Handle both response formats (direct or nested in doctor object)
     const doctor = appointment.doctor || appointment.doctorId;
     const doctorUser = doctor?.userId || doctor;
     const doctorName = doctorUser?.name || doctor?.name || 'Doctor';
@@ -190,12 +184,8 @@ export default function PatientAppointment() {
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h3 className="text-lg font-semibold">
-                  Dr. {doctorName}
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  {doctorSpecialization}
-                </p>
+                <h3 className="text-lg font-semibold">Dr. {doctorName}</h3>
+                <p className="text-sm text-muted-foreground">{doctorSpecialization}</p>
                 <div className="flex flex-wrap gap-3 mt-2">
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <MapPin className="h-3 w-3" />
@@ -292,7 +282,6 @@ export default function PatientAppointment() {
 
   return (
     <div className="container max-w-5xl py-8">
-      {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold">My Appointments</h1>
         <p className="text-muted-foreground mt-1">

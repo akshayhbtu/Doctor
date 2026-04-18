@@ -1,8 +1,6 @@
-// import Doctor from "../models/Doctor.js";
-
 import Doctor from "../models/Doctor.js";
-// import mongoose from "mongoose";
 import Appointment from "../models/Appointment.js";
+import Chat from "../models/Chat.js";  
 
 const normalizeTime = (time) => {
   return time.trim().toUpperCase().replace(/\s+/g, " ");
@@ -10,10 +8,8 @@ const normalizeTime = (time) => {
 
 export const bookAppointment = async (req, res) => {
   try {
-    const { doctorId, appointmentDate, startTime, endTime, symptoms } =
-      req.body;
+    const { doctorId, appointmentDate, startTime, endTime, symptoms } = req.body;
 
-    //   Validation
     if (!doctorId || !appointmentDate || !startTime || !endTime || !symptoms) {
       return res.status(400).json({
         success: false,
@@ -21,9 +17,7 @@ export const bookAppointment = async (req, res) => {
       });
     }
 
-    //   Find doctor
     const doctor = await Doctor.findById(doctorId);
-
     if (!doctor) {
       return res.status(404).json({
         success: false,
@@ -31,9 +25,7 @@ export const bookAppointment = async (req, res) => {
       });
     }
 
-    //  Match date
     const selectedDate = new Date(appointmentDate);
-
     const dateSlot = doctor.availableSlots.find(
       (d) => new Date(d.date).toDateString() === selectedDate.toDateString(),
     );
@@ -45,7 +37,6 @@ export const bookAppointment = async (req, res) => {
       });
     }
 
-    //  Match slot
     const slot = dateSlot.slots.find(
       (s) =>
         normalizeTime(s.startTime) === normalizeTime(startTime) &&
@@ -59,7 +50,6 @@ export const bookAppointment = async (req, res) => {
       });
     }
 
-    //  Check already booked
     if (slot.isBooked) {
       return res.status(400).json({
         success: false,
@@ -67,13 +57,9 @@ export const bookAppointment = async (req, res) => {
       });
     }
 
-    // Mark slot booked
     slot.isBooked = true;
-
-    // Save doctor
     await doctor.save();
 
-    //  Create appointment
     const appointment = await Appointment.create({
       patientId: req.user._id,
       doctorId,
@@ -94,7 +80,6 @@ export const bookAppointment = async (req, res) => {
     });
   } catch (error) {
     console.error("Book Appointment Error:", error);
-
     res.status(500).json({
       success: false,
       message: error.message,
@@ -102,21 +87,12 @@ export const bookAppointment = async (req, res) => {
   }
 };
 
-
-
-// update appointment by doctor
+// Update appointment by doctor
 export const updateAppointmentStatus = async (req, res) => {
   try {
     const { status } = req.body;
 
-    //  Validate status
-    const validStatus = [
-      "pending",
-      "approved",
-      "rejected",
-      "completed",
-      "cancelled",
-    ];
+    const validStatus = ["pending", "approved", "rejected", "completed", "cancelled"];
 
     if (!validStatus.includes(status)) {
       return res.status(400).json({
@@ -125,9 +101,7 @@ export const updateAppointmentStatus = async (req, res) => {
       });
     }
 
-    //  Find appointment
     const appointment = await Appointment.findById(req.params.id);
-
     if (!appointment) {
       return res.status(404).json({
         success: false,
@@ -135,11 +109,8 @@ export const updateAppointmentStatus = async (req, res) => {
       });
     }
 
-    //  Update status
-    appointment.status = status;
-
-    //  If cancelled → free slot
-    if (status === "cancelled") {
+    // Free slot for both "cancelled" AND "rejected"
+    if (status === "cancelled" || status === "rejected") {
       const doctor = await Doctor.findById(appointment.doctorId);
 
       if (doctor) {
@@ -158,6 +129,7 @@ export const updateAppointmentStatus = async (req, res) => {
 
           if (slot) {
             slot.isBooked = false;
+            console.log(`✅ Slot freed: ${slot.startTime} - ${slot.endTime} (${status})`);
           }
         }
 
@@ -165,24 +137,22 @@ export const updateAppointmentStatus = async (req, res) => {
       }
     }
 
+    appointment.status = status;
     await appointment.save();
 
     res.status(200).json({
       success: true,
-      message: "Appointment status updated",
+      message: `Appointment ${status}`,
       appointment,
     });
   } catch (error) {
     console.error("Update Appointment Error:", error);
-
     res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
-
-
 
 export const getUserAppointments = async (req, res) => {
   try {
@@ -213,9 +183,6 @@ export const getUserAppointments = async (req, res) => {
   }
 };
 
-
-// Get user's upcoming appointments
-
 export const getUserUpcomingAppointments = async (req, res) => {
   try {
     const appointments = await Appointment.find({
@@ -228,13 +195,12 @@ export const getUserUpcomingAppointments = async (req, res) => {
         populate: {
           path: 'userId',
           model: 'User',
-          select: 'name email phoneNumber'  // Sirf User se name, email, phoneNumber
+          select: 'name email phoneNumber'
         }
       })
       .sort({ appointmentDate: 1 })
       .limit(5);
 
-    // Format response for frontend
     const formattedAppointments = appointments.map(apt => {
       const doctor = apt.doctorId;
       const user = doctor?.userId;
@@ -253,7 +219,7 @@ export const getUserUpcomingAppointments = async (req, res) => {
           hospital: doctor?.hospital,
           consultationFee: doctor?.consultationFee,
           location: doctor?.location,
-          profileImage: doctor?.profileImage?.url || doctor?.profileImage, // Doctor se profileImage
+          profileImage: doctor?.profileImage?.url || doctor?.profileImage,
           email: user?.email,
           phoneNumber: user?.phoneNumber
         }
@@ -273,8 +239,6 @@ export const getUserUpcomingAppointments = async (req, res) => {
   }
 };
 
-
-// Get user's appointment history
 export const getUserAppointmentHistory = async (req, res) => {
   try {
     const appointments = await Appointment.find({
@@ -292,9 +256,6 @@ export const getUserAppointmentHistory = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
-
-// get doctor appointments
 
 export const getDocotorAppointments = async (req, res) => {
   try {
@@ -316,6 +277,85 @@ export const getDocotorAppointments = async (req, res) => {
       appointments,
     });
   } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+//  NEW: Get all appointments for patient (with chat info)
+export const getAllPatientAppointments = async (req, res) => {
+  try {
+    const appointments = await Appointment.find({
+      patientId: req.user._id,
+      status: { $in: ['approved', 'completed', 'pending'] }
+    })
+      .populate({
+        path: 'doctorId',
+        populate: {
+          path: 'userId',
+          model: 'User',
+          select: 'name email phoneNumber'
+        }
+      })
+      .sort({ updatedAt: -1 });
+
+    // Get last message for each appointment from chat
+    const appointmentsWithChat = await Promise.all(
+      appointments.map(async (apt) => {
+        const chat = await Chat.findOne({ appointmentId: apt._id });
+        return {
+          ...apt.toObject(),
+          lastMessage: chat?.lastMessage || null,
+          lastMessageTime: chat?.lastMessageTime || null,
+        };
+      })
+    );
+
+    res.status(200).json({
+      success: true,
+      appointments: appointmentsWithChat,
+    });
+  } catch (error) {
+    console.error("Get All Patient Appointments Error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+//  NEW: Get all appointments for doctor (with chat info)
+export const getAllDoctorAppointments = async (req, res) => {
+  try {
+    const doctor = await Doctor.findOne({ userId: req.user._id });
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        message: "Doctor not found",
+      });
+    }
+
+    const appointments = await Appointment.find({ 
+      doctorId: doctor._id,
+      status: { $in: ['approved', 'completed', 'pending'] }
+    })
+      .populate("patientId", "name email phoneNumber profileImage")
+      .sort({ updatedAt: -1 });
+
+    // Get last message for each appointment from chat
+    const appointmentsWithChat = await Promise.all(
+      appointments.map(async (apt) => {
+        const chat = await Chat.findOne({ appointmentId: apt._id });
+        return {
+          ...apt.toObject(),
+          lastMessage: chat?.lastMessage || null,
+          lastMessageTime: chat?.lastMessageTime || null,
+        };
+      })
+    );
+
+    res.status(200).json({
+      success: true,
+      appointments: appointmentsWithChat,
+    });
+  } catch (error) {
+    console.error("Get All Doctor Appointments Error:", error);
     res.status(500).json({ message: error.message });
   }
 };

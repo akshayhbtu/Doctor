@@ -1,7 +1,7 @@
 
 import express from 'express'
 import { authorize, protect } from '../middleware/auth.js';
-import { bookAppointment, getDocotorAppointments, getUserAppointmentHistory, getUserAppointments, getUserUpcomingAppointments, updateAppointmentStatus } from '../controllers/appointmentController.js';
+import { bookAppointment, getAllDoctorAppointments, getAllPatientAppointments, getDocotorAppointments, getUserAppointmentHistory, getUserAppointments, getUserUpcomingAppointments, updateAppointmentStatus } from '../controllers/appointmentController.js';
 
 const router= express.Router();
 
@@ -14,6 +14,9 @@ router.get("/user/history", protect,authorize("user"), getUserAppointmentHistory
 router.get("/user/upcoming", protect, authorize('user'), getUserUpcomingAppointments);
 
 router.get("/doctor", protect, authorize("doctor"), getDocotorAppointments);
+
+router.get("/user/all",protect,authorize("user"),getAllPatientAppointments)
+router.get('/doctor/all',protect,authorize("doctor"),getAllDoctorAppointments)
 
 
 

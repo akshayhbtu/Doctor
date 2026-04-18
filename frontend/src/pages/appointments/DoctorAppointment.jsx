@@ -19,7 +19,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   Calendar,
   Clock,
-  MapPin,
   Phone,
   Mail,
   CheckCircle,
@@ -28,7 +27,6 @@ import {
   Calendar as CalendarIcon,
   Loader2,
   MessageSquare,
-  ChevronRight,
 } from 'lucide-react';
 
 export default function DoctorAppointment() {
@@ -42,7 +40,6 @@ export default function DoctorAppointment() {
     queryKey: ['doctorAppointments', user?._id],
     queryFn: async () => {
       const response = await api.get('/appointment/doctor');
-      console.log('Doctor appointments:', response);
       return response;
     },
     enabled: !!user?._id,
@@ -55,7 +52,7 @@ export default function DoctorAppointment() {
       return response;
     },
     onSuccess: () => {
-      toast.success('Appointment status updated!');
+      toast.success('Appointment status updated successfully!');
       refetch();
       queryClient.invalidateQueries(['doctorAppointments']);
     },
@@ -101,10 +98,12 @@ export default function DoctorAppointment() {
   };
 
   const filteredAppointments = getFilteredAppointments();
+  
   const stats = {
     pending: appointmentsData?.appointments?.filter(apt => apt.status === 'pending').length || 0,
     approved: appointmentsData?.appointments?.filter(apt => apt.status === 'approved').length || 0,
     completed: appointmentsData?.appointments?.filter(apt => apt.status === 'completed').length || 0,
+    rejected: appointmentsData?.appointments?.filter(apt => apt.status === 'rejected').length || 0,
     total: appointmentsData?.appointments?.length || 0,
   };
 
@@ -113,8 +112,8 @@ export default function DoctorAppointment() {
       <div className="container max-w-5xl py-8">
         <div className="space-y-4">
           <Skeleton className="h-10 w-64" />
-          <div className="grid grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {[...Array(5)].map((_, i) => (
               <Skeleton key={i} className="h-24" />
             ))}
           </div>
@@ -146,7 +145,7 @@ export default function DoctorAppointment() {
                 <div className="flex flex-wrap gap-3 mt-2">
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Phone className="h-3 w-3" />
-                    {patient?.phone || 'N/A'}
+                    {patient?.phone || patient?.phoneNumber || 'N/A'}
                   </div>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Mail className="h-3 w-3" />
@@ -179,7 +178,7 @@ export default function DoctorAppointment() {
                   <>
                     <Button
                       size="sm"
-                      className="bg-black cursor-pointer hover:bg-gray-600"
+                      className="bg-green-600 hover:bg-green-700 text-white cursor-pointer"
                       onClick={() => handleStatusUpdate(appointment._id, 'approved')}
                       disabled={updateStatusMutation.isPending}
                     >
@@ -189,7 +188,7 @@ export default function DoctorAppointment() {
                     <Button
                       variant="destructive"
                       size="sm"
-                      className="bg-white cursor-pointer text-black hover:bg-gray-700 hover:text-white border-gray-800"
+                      className="cursor-pointer"
                       onClick={() => handleStatusUpdate(appointment._id, 'rejected')}
                       disabled={updateStatusMutation.isPending}
                     >
@@ -201,7 +200,7 @@ export default function DoctorAppointment() {
                 {appointment.status === 'approved' && (
                   <Button
                     size="sm"
-                    className="bg-blue-500 hover:bg-blue-600"
+                    className="bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
                     onClick={() => handleStatusUpdate(appointment._id, 'completed')}
                     disabled={updateStatusMutation.isPending}
                   >
@@ -214,7 +213,7 @@ export default function DoctorAppointment() {
                     variant="outline"
                     size="sm"
                     onClick={() => handleChat(appointment._id)}
-                    className="gap-1"
+                    className="gap-1 cursor-pointer"
                   >
                     <MessageSquare className="h-3 w-3" />
                     Chat
@@ -239,7 +238,6 @@ export default function DoctorAppointment() {
 
   return (
     <div className="container max-w-5xl py-8">
-      {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Appointment Requests</h1>
         <p className="text-muted-foreground mt-1">
@@ -248,11 +246,11 @@ export default function DoctorAppointment() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
         <Card>
           <CardContent className="pt-6">
             <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-xs text-muted-foreground">Total Appointments</p>
+            <p className="text-xs text-muted-foreground">Total</p>
           </CardContent>
         </Card>
         <Card className="border-yellow-200 bg-yellow-50/50">
@@ -273,6 +271,24 @@ export default function DoctorAppointment() {
             <p className="text-xs text-muted-foreground">Completed</p>
           </CardContent>
         </Card>
+        <Card className="border-red-200 bg-red-50/50">
+          <CardContent className="pt-6">
+            <div className="text-2xl font-bold text-red-600">{stats.rejected}</div>
+            <p className="text-xs text-muted-foreground">Rejected</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Color Legend */}
+      <div className="mb-6 p-3 bg-muted/30 rounded-lg">
+        <p className="text-xs font-medium mb-2">📋 Status Legend:</p>
+        <div className="flex flex-wrap gap-2">
+          <Badge className="bg-yellow-50 text-yellow-700">Pending</Badge>
+          <Badge className="bg-green-50 text-green-700">Approved</Badge>
+          <Badge className="bg-red-50 text-red-700">Rejected</Badge>
+          <Badge className="bg-blue-50 text-blue-700">Completed</Badge>
+          <Badge className="bg-gray-50 text-gray-700">Cancelled</Badge>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -280,15 +296,35 @@ export default function DoctorAppointment() {
         <TabsList className="grid w-full max-w-md grid-cols-4">
           <TabsTrigger value="pending" className="gap-2">
             Pending
+            {stats.pending > 0 && (
+              <Badge className="ml-1 bg-yellow-500 text-white">
+                {stats.pending}
+              </Badge>
+            )}
           </TabsTrigger>
           <TabsTrigger value="approved" className="gap-2">
             Approved
+            {stats.approved > 0 && (
+              <Badge className="ml-1 bg-green-500 text-white">
+                {stats.approved}
+              </Badge>
+            )}
           </TabsTrigger>
           <TabsTrigger value="completed" className="gap-2">
             Completed
+            {stats.completed > 0 && (
+              <Badge className="ml-1 bg-blue-500 text-white">
+                {stats.completed}
+              </Badge>
+            )}
           </TabsTrigger>
           <TabsTrigger value="all" className="gap-2">
             All
+            {stats.total > 0 && (
+              <Badge variant="secondary" className="ml-1">
+                {stats.total}
+              </Badge>
+            )}
           </TabsTrigger>
         </TabsList>
 
